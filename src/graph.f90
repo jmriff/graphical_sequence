@@ -3,8 +3,14 @@
 ! OUTPUT: YES if the sequence is graphical, NO otherwise.
 
 module graphical_sequence
+   use stdlib_logger, log => global_logger
+   use stdlib_sorting, only: sort
    implicit none
+
    private
+
+   ! Declare variables for logger
+   integer :: unit, iostat
 
    public :: graphical
 contains
@@ -12,55 +18,74 @@ contains
       ! S = the degree sequence of all verticies in Graph G
       ! p = number of verticies in Graph G (the "order" of G).
 
-      use stdlib_sorting, only: sort
+      ! Declare dummy variables
       integer, INTENT(IN) :: p
       integer, INTENT(IN), dimension(p) :: S
       logical, INTENT(OUT) :: test
 
+      ! Declaire local variables
       integer, dimension(p) :: ds
       logical :: reverse = .true.   ! sort in order of non-increasing values
       integer :: index = 1
       integer :: i, j
+
+      ! Declaire logger variables
+      character(len=256) :: message
+
+      call log%add_log_file('log.txt', unit, &
+                            position='asis', stat=iostat)
+      if (iostat /= success) then
+         error stop 'Unable to open "log.txt".'
+      end if
+
+      call log%configure(level=debug_level)
 
       ds = S
 
       ! (1) If there exists an integer d in S such that d > p - 1, then graphable = FALSE
       if (maxval(ds) > p - 1) then
          test = .false.
-         print *, 'NOT GRAPHICAL: There is a degree sequence value  > number of verticies -1.'
+         call log%log_message('There is a degree sequence value  > number of verticies -1.', &
+                              module='graphical_sequence', procedure='graphical', &
+                              prefix='NOT GRAPHICAL')
 
       else
          do
             ! (2) if the sequence is all zeros, then graphable = TRUE
             if (sum(ds(index:p)) == 0) then
                test = .true.
-               print *, 'GRAPHICAL: the degree sequence is all zeros.'
+               call log%log_message('The degree sequence is all zeros.', &
+                                    module='graphical_sequence', procedure='graphical', &
+                                    prefix='GRAPHICAL')
                exit
 
                ! (3) if the sequence contains a negative number, then graphable = FALSE
             else if (minval(ds(index:p)) < 0) then
                test = .false.
-               print *, 'NOT GRAPHICAL: the degree sequence contains a negative number.'
+               call log%log_message('The degree sequence contains a negative number.', &
+                                    module='graphical_sequence', procedure='graphical', &
+                                    prefix='NOT GRAPHICAL')
                exit
 
                ! (4) reorder the sequence so that it is nonincreasing.
             else
-               call sort(DS, reverse)
-               print 100, 'Sorted degree sequence: ', index, (ds(j), j=1, p)
+               call sort(ds, reverse)
+               write (message, 100) 'Sorted sequence: ', index, (ds(j), j=1, p)
+               call log%log_DEBUG(trim(message), module='graphical_sequence', procedure='graphical')
 
                ! (5) Delete the first term d(1) from the sequence and subtract '1' from the next d(1) terms
                !     to form a new sequence.  Go to Step (2).
                forall (i=index + 1:index + ds(index))
                   ds(i) = ds(i) - 1
                end forall
-               print 100, 'new sequence: ', index, (ds(j), j=1, p)
-               print *
+               write (message, 100) 'New sequence: ', index, (ds(j), j=1, p)
+               call log%log_DEBUG(trim(message), module='graphical_sequence', procedure='graphical')
 
                index = index + 1
             end if
          end do
       end if
-100   format(a, t40, i4, 2x, *(i4))
+100   format(a, t25, i4, 2x, *(i4))
 
    end subroutine graphical
 end module graphical_sequence
