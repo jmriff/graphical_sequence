@@ -12,7 +12,7 @@ module graphical_sequence
    ! Declare variables for logger
    integer :: unit, iostat
 
-   public :: graphical
+   public :: graphical, is_graphical
 contains
    subroutine graphical(S, p, test)
       ! S = the degree sequence of all verticies in Graph G
@@ -88,4 +88,55 @@ contains
 100   format(a, t25, i4, 2x, *(i4))
 
    end subroutine graphical
+
+   pure function is_graphical(S, p) result(test_result)
+      ! S = the degree sequence of all verticies in Graph G
+      ! p = number of verticies in Graph G (the "order" of G).
+
+      ! Declare dummy variables
+      integer, INTENT(IN) :: p
+      integer, INTENT(IN), dimension(p) :: S
+      logical :: test_result
+
+      ! Declaire local variables
+      integer, dimension(p) :: ds
+      logical, PARAMETER :: reverse = .true.   ! sort in order of non-increasing values
+      integer :: index
+      integer :: i, j
+
+      ds = S
+      index = 1
+
+      ! (1) If there exists an integer d in S such that d > p - 1, then graphable = FALSE
+      if (maxval(ds) > p - 1) then
+         test_result = .false.
+
+      else
+         do
+            ! (2) if the sequence is all zeros, then graphable = TRUE
+            if (sum(ds(index:p)) == 0) then
+               test_result = .true.
+               exit
+
+               ! (3) if the sequence contains a negative number, then graphable = FALSE
+            else if (minval(ds(index:p)) < 0) then
+               test_result = .false.
+               exit
+
+               ! (4) reorder the sequence so that it is nonincreasing.
+            else
+               call sort(ds, reverse)
+
+               ! (5) Delete the first term d(1) from the sequence and subtract '1' from the next d(1) terms
+               !     to form a new sequence.  Go to Step (2).
+               forall (i=index + 1:index + ds(index))
+                  ds(i) = ds(i) - 1
+               end forall
+
+               index = index + 1
+            end if
+         end do
+      end if
+
+   end function is_graphical
 end module graphical_sequence

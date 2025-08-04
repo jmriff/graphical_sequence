@@ -20,7 +20,9 @@ program main
    print *, 'Thank you for the info.  Time to get busy...'
 
    call graphical(dsequence, order, result)
-   print *, 'The result passed back to main.f90: ', result
+   print *, 'The result passed back from graphical subroutine: ', result
+
+   print *, 'Result passed back from is_graphical() function: ', is_graphical(dsequence, order)
 
    deallocate (dsequence)
 
